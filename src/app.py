@@ -5,7 +5,7 @@ import os
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from agent.dsm_llm_interviewer import DSM_INTERVIEWER_SYSTEM_PROMPT
+from agent.dsm_interviewer import DSM_INTERVIEWER_SYSTEM_PROMPT
 from agent.termination_intent_judge import (
     build_termination_judge_prompt,
     is_termination_intent,
