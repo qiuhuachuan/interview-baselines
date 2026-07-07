@@ -5,7 +5,7 @@ import os
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from agent.general_llm_interviewer import INTERVIEWER_SYSTEM_PROMPT
+from agent.dsm_llm_interviewer import DSM_INTERVIEWER_SYSTEM_PROMPT
 from agent.termination_intent_judge import (
     build_termination_judge_prompt,
     is_termination_intent,
@@ -34,14 +34,20 @@ class InterviewHandler(SimpleHTTPRequestHandler):
             payload = json.loads(self.rfile.read(length))
             history = self._validate_messages(payload.get("messages"))
             response = get_llm_content(
-                [{"role": "system", "content": INTERVIEWER_SYSTEM_PROMPT}, *history],
+                [
+                    {"role": "system", "content": DSM_INTERVIEWER_SYSTEM_PROMPT},
+                    *history,
+                ],
                 MODEL,
             )
             judgement = get_llm_content(
                 [{"role": "user", "content": build_termination_judge_prompt(response)}],
                 MODEL,
             )
-            ended = is_termination_intent(judgement) or "[INTERVIEW_COMPLETE]" in response.lower()
+            ended = (
+                is_termination_intent(judgement)
+                or "[interview_complete]" in response.lower()
+            )
             clean_response = response.replace("[INTERVIEW_COMPLETE]", "").strip()
             self._json_response(200, {"message": clean_response, "ended": ended})
         except (ValueError, TypeError, json.JSONDecodeError) as exc:
