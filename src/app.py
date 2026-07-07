@@ -6,6 +6,8 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from agent.dsm_interviewer import DSM_INTERVIEWER_SYSTEM_PROMPT
+from agent.general_interviewer import GENERAL_INTERVIEWER_SYSTEM_PROMPT
+from agent.mini_interviewer import MINI_INTERVIEWER_SYSTEM_PROMPT
 from agent.termination_intent_judge import (
     build_termination_judge_prompt,
     is_termination_intent,
@@ -16,6 +18,11 @@ STATIC_DIR = Path(__file__).parent / "static"
 MODEL = os.environ.get("LLM_MODEL", "deepseek-v4-flash")
 MAX_MESSAGES = 40
 MAX_MESSAGE_LENGTH = 4000
+INTERVIEWER_PROMPTS = {
+    "general": GENERAL_INTERVIEWER_SYSTEM_PROMPT,
+    "dsm": DSM_INTERVIEWER_SYSTEM_PROMPT,
+    "mini": MINI_INTERVIEWER_SYSTEM_PROMPT,
+}
 
 
 class InterviewHandler(SimpleHTTPRequestHandler):
@@ -32,10 +39,13 @@ class InterviewHandler(SimpleHTTPRequestHandler):
             if length <= 0 or length > 200_000:
                 raise ValueError("请求大小不正确")
             payload = json.loads(self.rfile.read(length))
+            interviewer_prompt = self._get_interviewer_prompt(
+                payload.get("interviewer")
+            )
             history = self._validate_messages(payload.get("messages"))
             response = get_llm_content(
                 [
-                    {"role": "system", "content": DSM_INTERVIEWER_SYSTEM_PROMPT},
+                    {"role": "system", "content": interviewer_prompt},
                     *history,
                 ],
                 MODEL,
@@ -55,6 +65,12 @@ class InterviewHandler(SimpleHTTPRequestHandler):
         except Exception as exc:
             print(f"LLM request failed: {exc}")
             self._json_response(502, {"error": "暂时无法连接访谈服务，请稍后再试。"})
+
+    @staticmethod
+    def _get_interviewer_prompt(interviewer):
+        if not isinstance(interviewer, str) or interviewer not in INTERVIEWER_PROMPTS:
+            raise ValueError("请选择有效的访谈智能体")
+        return INTERVIEWER_PROMPTS[interviewer]
 
     @staticmethod
     def _validate_messages(messages):

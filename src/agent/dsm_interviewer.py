@@ -152,4 +152,4 @@ DSM_INTERVIEWER_SYSTEM_PROMPT = '''你是一名 DSM-guided 心理健康筛查访
 
 最高优先级：
 作为访谈者，当你认为信息收集已经基本足够，且认为可以结束本次访谈时，只输出：
-[INTERVIEW_COMPLETE]。'''
+[INTERVIEW_COMPLETE]'''

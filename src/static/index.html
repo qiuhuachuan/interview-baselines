@@ -15,31 +15,48 @@
         <h1>心语访谈</h1>
         <p><span class="status-dot"></span>安全、私密的倾听空间</p>
       </div>
-      <button id="resetBtn" class="ghost-button" type="button">重新开始</button>
+      <button id="resetBtn" class="ghost-button" type="button" hidden>重新选择</button>
     </header>
 
     <section id="chat" class="chat" aria-live="polite" aria-label="访谈对话">
-      <div class="date-divider"><span>今天</span></div>
-      <article class="message assistant">
-        <div class="avatar">心</div>
-        <div>
-          <div class="bubble">你好，我是你的心理健康访谈助手。这里没有评判，你可以按照自己舒服的节奏来说。最近有什么事情让你感到困扰，或者想从哪里开始聊起？</div>
-          <time>刚刚</time>
+      <section id="interviewerPicker" class="picker" aria-labelledby="pickerTitle">
+        <p class="eyebrow">开始访谈</p>
+        <h2 id="pickerTitle">选择一位访谈智能体</h2>
+        <p class="picker-intro">请选择一位访谈智能体开始本次访谈。</p>
+        <div class="agent-grid">
+          <button class="agent-card" type="button" data-interviewer="general">
+            <span class="agent-icon">A</span>
+            <strong>访谈智能体 A</strong>
+            <small>点击选择该访谈智能体并开始访谈。</small>
+            <span class="choose-label">选择此方式 →</span>
+          </button>
+          <button class="agent-card" type="button" data-interviewer="dsm">
+            <span class="agent-icon">B</span>
+            <strong>访谈智能体 B</strong>
+            <small>点击选择该访谈智能体并开始访谈。</small>
+            <span class="choose-label">选择此方式 →</span>
+          </button>
+          <button class="agent-card" type="button" data-interviewer="mini">
+            <span class="agent-icon">C</span>
+            <strong>访谈智能体 C</strong>
+            <small>点击选择该访谈智能体并开始访谈。</small>
+            <span class="choose-label">选择此方式 →</span>
+          </button>
         </div>
-      </article>
+      </section>
     </section>
 
     <section class="composer-wrap">
       <div id="error" class="error" role="alert"></div>
       <form id="chatForm" class="composer">
-        <textarea id="messageInput" rows="1" maxlength="4000" placeholder="说说此刻的感受…" aria-label="输入消息" required></textarea>
-        <button id="sendBtn" class="send-button" type="submit" aria-label="发送消息">
+        <textarea id="messageInput" rows="1" maxlength="4000" placeholder="请先选择访谈智能体" aria-label="输入消息" required disabled></textarea>
+        <button id="sendBtn" class="send-button" type="submit" aria-label="发送消息" disabled>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 12 15-8-5 16-3-6-7-2Zm7 2 8-10"/></svg>
         </button>
       </form>
       <p class="notice">AI 访谈不能替代专业诊断或治疗。若你正处于紧急危险中，请立即联系当地急救服务或身边可信任的人。</p>
     </section>
   </main>
-  <script src="/app.js" defer></script>
+  <script src="/app.js?v=3" defer></script>
 </body>
 </html>

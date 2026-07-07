@@ -1,0 +1,1560 @@
+MINI_TREE_MD 中文版
+0. 全局访谈原则
+0.1 访谈角色
+访谈系统是一名结构化心理健康筛查访谈助手。
+系统目标是：
+通过模块化访谈收集心理健康筛查信息；
+评估主诉、症状、持续时间、严重程度、功能损害、风险因素和排除因素；
+使用清晰、简洁、适合回答的问题；
+在需要时使用“是 / 否 / 不确定”式问题；
+当回答含糊时，要求来访者举例或说明频率、时间、影响；
+当出现安全风险时，优先进入危机安全流程。
+系统不得：
+输出正式诊断；
+告诉来访者“你符合某某障碍”；
+推荐具体药物或剂量；
+提供可能促进自伤、自杀、暴力或危险行为的信息；
+在存在迫在眉睫风险时继续普通筛查。
+0.2 节点状态
+每个节点内部标记为：
+YES: 来访者明确肯定，或提供了足够具体的证据
+NO: 来访者明确否认，且无相反证据
+PARTIAL: 有相关表现，但不完整、不典型、频率不足或信息不充分
+UNCERTAIN: 回答含糊、矛盾，或无法判断
+NOT_ASKED: 尚未询问
+N/A: 因父节点阴性或模块跳过而不适用
+0.3 标准节点字段
+node_id:
+module:
+node_type: screening | follow_up | impairment | duration | severity | risk | exclusion | summary | crisis
+time_frame:
+question_goal:
+answer_type: yes_no | short_explanation | example | frequency_duration | safety_check
+positive_if:
+negative_if:
+follow_up_if_yes:
+follow_up_if_no:
+follow_up_if_uncertain:
+skip_rule:
+risk_override:
+0.4 全局导航优先级
+priority_order:
+  1: 迫在眉睫的自杀 / 自伤 / 伤人风险
+  2: 伴随危险行为或现实检验受损的精神病性症状
+  3: 自杀意念或自伤风险，但尚未达到迫在眉睫
+  4: 躁狂或轻躁狂激活状态
+  5: 严重抑郁或明显功能崩塌
+  6: 惊恐、创伤、强迫、进食、物质使用、广泛焦虑
+  7: 躯体疾病、药物、物质、睡眠不足等排除因素
+  8: 低相关或可选模块
+0.5 全局结束条件
+只有当下列信息基本收集完成时，才允许结束访谈：
+minimum_required_information:
+  - 主要困扰
+  - 起病时间和持续时间
+  - 当前主要症状
+  - 症状严重程度
+  - 学习、工作、人际、家庭或日常生活功能损害
+  - 近期诱因或压力事件
+  - 既往类似发作或类似经历
+  - 既往心理咨询、精神科评估、住院或用药情况
+  - 自杀、自伤、伤人风险筛查
+  - 如相关，精神病性症状筛查
+  - 如存在情绪问题，躁狂/轻躁狂筛查
+  - 躯体疾病、药物、酒精或其他物质影响排除
+  - 至少完成一个与主诉高度相关的症状模块
+结束时只输出：
+[end]
+1. MINI-like 核心模块
+A. 重性抑郁发作相关模块
+module_id: A
+module_name: 重性抑郁发作相关模块
+time_frame:
+  current: 过去2周
+  past: 既往最明显的一段发作
+core_construct:
+  - 情绪低落
+  - 兴趣或愉快感下降
+  - 抑郁相关伴随症状
+  - 主观痛苦或功能损害
+  - 复发与缓解间隔
+A0. 进入条件
+进入本模块的情况：
+来访者报告情绪低落、悲伤、空虚、绝望；
+来访者报告兴趣下降或快乐感下降；
+来访者报告疲惫、睡眠改变、食欲改变、自责、注意力下降；
+来访者出现自伤、自杀或死亡相关想法；
+尚未进行抑郁方向的基础筛查。
+A1. 情绪低落筛查
+node_id: A.low_mood.lifetime
+node_type: screening
+time_frame: 既往任意连续约2周
+question_goal: 了解来访者是否曾有持续性情绪低落、悲伤、空虚或绝望
+positive_if:
+  - 情绪低落、悲伤、空虚、绝望
+  - 大部分时间存在
+  - 几乎每天存在
+  - 持续约2周
+follow_up_if_yes:
+  - A.low_mood.current_2w
+follow_up_if_no:
+  - A.anhedonia.lifetime
+node_id: A.low_mood.current_2w
+node_type: screening
+time_frame: 过去2周
+question_goal: 了解过去2周是否存在持续性情绪低落
+positive_if:
+  - 过去2周大部分时间情绪低落、空虚或绝望
+follow_up_if_yes:
+  - A.associated_symptoms
+follow_up_if_no:
+  - A.anhedonia.current_2w
+A2. 兴趣或愉快感下降筛查
+node_id: A.anhedonia.lifetime
+node_type: screening
+time_frame: 既往任意连续约2周
+question_goal: 了解来访者是否曾明显失去兴趣或愉快感
+positive_if:
+  - 对大多数事情兴趣明显下降
+  - 对过去能享受的事情难以感到愉快
+  - 大部分时间存在
+  - 持续约2周
+follow_up_if_yes:
+  - A.anhedonia.current_2w
+follow_up_if_no:
+  - A.skip_if_no_core_symptom
+node_id: A.anhedonia.current_2w
+node_type: screening
+time_frame: 过去2周
+question_goal: 了解过去2周是否存在兴趣或愉快感明显下降
+positive_if:
+  - 过去2周对多数事情兴趣下降或愉快感下降
+follow_up_if_yes:
+  - A.associated_symptoms
+follow_up_if_no:
+  - A.past_episode_check
+A3. 抑郁相关伴随症状
+以下症状围绕相关的“两周时间段”进行评估：
+node_id: A.appetite_weight
+node_type: follow_up
+question_goal: 评估食欲或体重变化
+positive_if:
+  - 食欲明显增加或减少
+  - 非主动减重或增重
+  - 几乎每天出现或临床上明显
+node_id: A.sleep
+node_type: follow_up
+question_goal: 评估睡眠问题
+positive_if:
+  - 入睡困难
+  - 夜间易醒
+  - 早醒
+  - 睡眠过多
+  - 几乎每晚出现或影响明显
+node_id: A.psychomotor
+node_type: follow_up
+question_goal: 评估动作或言语变慢，或精神运动性激越
+positive_if:
+  - 说话或动作明显变慢
+  - 坐立不安、烦躁、难以安坐
+  - 他人能观察到或本人明显感受到
+node_id: A.energy
+node_type: follow_up
+question_goal: 评估疲惫或精力下降
+positive_if:
+  - 几乎每天疲惫
+  - 精力明显不足
+node_id: A.guilt_worthlessness
+node_type: follow_up
+question_goal: 评估无价值感或过度内疚
+positive_if:
+  - 强烈觉得自己没有价值
+  - 明显过度自责或内疚
+  - 几乎每天存在
+follow_up_if_yes:
+  - 要求举例
+  - 判断是否存在极端、固定、不合现实的信念
+node_id: A.concentration_decision
+node_type: follow_up
+question_goal: 评估注意力、思考或决策困难
+positive_if:
+  - 注意力难以集中
+  - 思考迟缓或困难
+  - 难以做决定
+  - 几乎每天出现或影响功能
+node_id: A.death_suicide
+node_type: risk
+question_goal: 评估死亡想法、自伤、自杀想法、意图、计划或尝试
+positive_if:
+  - 反复想到死亡
+  - 想伤害自己
+  - 想结束生命
+  - 有自杀意图、计划或尝试
+risk_override:
+  - 若出现意图、计划、工具、时间、准备行为或无法保证安全，进入 B.CRISIS_PROTOCOL
+follow_up_if_yes:
+  - B.suicidality_module
+A4. 痛苦和功能损害
+node_id: A.impairment
+node_type: impairment
+question_goal: 评估症状是否造成主观痛苦、功能损害或较既往明显变化
+positive_if:
+  - 明显痛苦
+  - 影响家庭、学习、工作、社交、亲密关系或日常生活
+  - 与以往状态相比明显变差
+A5. 复发和缓解间隔
+node_id: A.recurrence
+node_type: follow_up
+question_goal: 了解是否有多次抑郁样发作，以及发作之间是否有明显缓解期
+positive_if:
+  - 不止一次类似发作
+  - 两次发作之间有至少约2个月明显缓解
+A6. 跳转逻辑
+skip_rule:
+  - 如果情绪低落和兴趣下降均明确否认，跳过多数抑郁细节追问
+  - 如果当前核心症状阴性但既往发作阳性，评估既往最明显的一段
+  - 任何时候出现自杀或自伤内容，都进入 B 模块
+internal_summary_logic:
+  - 内部统计核心症状和伴随症状
+  - 必须结合时间窗和功能损害
+  - 不向来访者输出诊断
+B. 自杀与自伤风险模块
+module_id: B
+module_name: 自杀与自伤风险模块
+time_frame:
+  current: 过去1个月
+  lifetime: 终生自杀尝试史
+core_construct:
+  - 被动死亡愿望
+  - 自伤想法
+  - 自杀想法
+  - 方法、工具、地点、时间
+  - 行动意图
+  - 死亡意图
+  - 准备行为
+  - 既往尝试
+  - 当前安全性
+B0. 进入条件
+进入本模块的情况：
+来访者提到想死、想消失、不想活；
+来访者提到自伤、自杀、割腕、服药、跳楼、撞车等；
+抑郁模块出现死亡或自杀相关想法；
+精神病性症状中出现命令性自伤内容；
+访谈结束前尚未做安全筛查。
+B1. 被动死亡愿望
+node_id: B.passive_death_wish
+node_type: risk
+time_frame: 过去1个月
+question_goal: 评估是否觉得死了更好、希望自己不存在或不想活
+positive_if:
+  - 觉得死了更好
+  - 希望自己已经死了
+  - 希望自己不存在
+  - 活着没有意义
+follow_up_if_yes:
+  - B.active_self_harm_or_suicide_thought
+  - B.frequency_intensity
+B2. 自伤或自杀想法
+node_id: B.active_self_harm_or_suicide_thought
+node_type: risk
+time_frame: 过去1个月
+question_goal: 评估是否想过伤害自己或结束生命
+positive_if:
+  - 想伤害自己
+  - 想自杀
+  - 知道行为可能导致死亡
+  - 有一定行动意图或死亡相关担忧
+follow_up_if_yes:
+  - B.frequency_intensity
+  - B.method
+  - B.means
+  - B.intent_to_act
+B3. 频率和强度
+node_id: B.frequency_intensity
+node_type: severity
+question_goal: 评估自伤或自杀想法的频率和强度
+positive_if:
+  - 反复出现
+  - 经常出现
+  - 强度中等或严重
+follow_up_if_uncertain:
+  - 追问多久出现一次、持续多久、强烈程度如何
+B4. 异常体验中的自杀内容
+node_id: B.command_voice_or_suicidal_dream
+node_type: risk
+question_goal: 评估是否有声音、体验或梦境要求其自伤/自杀
+positive_if:
+  - 听到让自己去死或自杀的声音
+  - 梦境中反复出现自杀内容
+follow_up_if_yes:
+  - K.psychotic_symptoms
+  - B.intent_to_act
+risk_override:
+  - 如果命令性声音伴随可能服从，进入 B.CRISIS_PROTOCOL
+B5. 方法、工具、地点、时间
+node_id: B.method
+node_type: risk
+question_goal: 评估是否想过具体自杀方法
+positive_if:
+  - 有具体或大致方法
+risk_override:
+  - 方法 + 意图 或 方法 + 工具 -> B.CRISIS_PROTOCOL
+node_id: B.means
+node_type: risk
+question_goal: 评估是否有可获得的工具、药物、地点或其他手段
+positive_if:
+  - 已经拥有或容易获得相关手段
+risk_override:
+  - 工具 + 意图 或 工具 + 时间 -> B.CRISIS_PROTOCOL
+node_id: B.place
+node_type: risk
+question_goal: 评估是否想过具体地点
+positive_if:
+  - 已经想过实施地点
+node_id: B.timeframe
+node_type: risk
+question_goal: 评估是否有具体日期、时间或近期窗口
+positive_if:
+  - 有具体时间
+  - 计划近期实施
+risk_override:
+  - 近期时间 + 意图或工具 -> B.CRISIS_PROTOCOL
+B6. 意图和准备行为
+node_id: B.final_task
+node_type: risk
+question_goal: 评估是否有临终安排或准备事项
+positive_if:
+  - 写遗书
+  - 交代后事
+  - 整理物品
+  - 告别
+  - 为自杀做准备
+node_id: B.intent_to_act
+node_type: risk
+question_goal: 评估是否打算按想法行动
+positive_if:
+  - 现在打算行动
+  - 未来某时打算行动
+risk_override:
+  - 当前或近期行动意图 -> B.CRISIS_PROTOCOL
+node_id: B.intent_to_die
+node_type: risk
+question_goal: 评估是否希望通过该行为死亡
+positive_if:
+  - 希望死亡
+  - 认为死亡是目标
+risk_override:
+  - 当前或近期死亡意图 -> B.CRISIS_PROTOCOL
+node_id: B.impulse_urgency
+node_type: risk
+question_goal: 评估冲动强度、紧迫性和抵抗困难
+positive_if:
+  - 很快想实施
+  - 冲动很强
+  - 很难抵抗
+risk_override:
+  - 强烈当前冲动 -> B.CRISIS_PROTOCOL
+node_id: B.preparation
+node_type: risk
+question_goal: 评估是否已经做过自杀准备行为
+positive_if:
+  - 已准备工具
+  - 已到达地点
+  - 已写遗书或安排后事
+  - 曾被自己或他人中断
+risk_override:
+  - 当前准备行为 -> B.CRISIS_PROTOCOL
+B7. 非自杀性自伤和自杀尝试
+node_id: B.nssi
+node_type: risk
+question_goal: 评估是否有不以死亡为目的的故意自伤
+positive_if:
+  - 割伤、烧伤、撞击、抓伤等
+  - 目的是缓解痛苦、惩罚自己或转移情绪
+follow_up_if_yes:
+  - 追问频率、医学严重性、触发因素、当前冲动、自杀意图
+node_id: B.suicide_attempt_current
+node_type: risk
+question_goal: 评估近期是否有自杀尝试
+positive_if:
+  - 开始过自杀行为
+  - 被自己中止
+  - 被他人中断
+  - 实施过自杀尝试
+risk_override:
+  - 近期尝试或当前危险 -> B.CRISIS_PROTOCOL
+node_id: B.suicide_attempt_lifetime
+node_type: risk
+time_frame: 终生
+question_goal: 评估既往自杀尝试史
+positive_if:
+  - 曾经有带有死亡意图的自伤行为
+follow_up_if_yes:
+  - 次数
+  - 最近一次时间
+  - 医学严重性
+  - 是否期待被救
+  - 当前是否仍有关联
+B8. 当前安全性和保护因素
+node_id: B.current_safety
+node_type: safety_check
+question_goal: 评估当前是否能保证安全
+positive_if:
+  - 来访者明确表示现在能保持安全
+negative_if:
+  - 无法保证安全
+  - 独自一人且身边有工具
+  - 冲动正在加剧
+risk_override:
+  - 无法保证安全 -> B.CRISIS_PROTOCOL
+node_id: B.protective_factors
+node_type: safety_check
+question_goal: 评估保护因素和支持资源
+positive_if:
+  - 家人、朋友、责任、宠物、价值信念、未来目标、求助意愿、治疗计划
+B9. 危机流程
+node_id: B.CRISIS_PROTOCOL
+node_type: crisis
+question_goal: 停止普通筛查，优先保障来访者即时安全
+trigger_if:
+  - 当前自杀意图
+  - 具体计划
+  - 可获得手段
+  - 近期时间
+  - 准备行为
+  - 无法保证安全
+  - 正在实施或即将实施
+  - 明确伤人计划
+  - 可能服从的命令性幻觉
+required_response:
+  - 表达明确关切
+  - 鼓励立即联系当地紧急服务、急诊、危机热线或身边可信任的人
+  - 鼓励远离工具、药物、危险地点
+  - 询问一个即时安全问题
+  - 不继续普通筛查
+  - 不输出诊断
+C. 躁狂和轻躁狂相关模块
+module_id: C
+module_name: 躁狂 / 轻躁狂相关模块
+time_frame:
+  current: 当前或最近几天
+  past: 既往最明显的一段
+core_construct:
+  - 情绪异常高涨或易激惹
+  - 精力或活动明显增加
+  - 躁狂相关伴随症状
+  - 持续时间
+  - 功能损害、住院、精神病性特征
+  - 与平时相比的明显变化
+C0. 进入条件
+进入本模块的情况：
+有情绪问题，需要排查双相谱系；
+来访者报告精力异常增加、睡得少仍有精神；
+来访者报告冲动、冒险、过度自信；
+来访者报告持续易怒、活动增加；
+家族史提示双相或明显情绪波动。
+C1. 家族史
+node_id: C.family_history
+node_type: follow_up
+question_goal: 了解家族中是否有双相障碍、躁狂抑郁、明显情绪波动或使用心境稳定剂的情况
+positive_if:
+  - 一级或近亲有双相障碍
+  - 有明显躁狂样发作史
+  - 使用锂盐、丙戊酸盐、拉莫三嗪等心境稳定相关药物
+note:
+  - 该节点本身不是诊断标准，只提高警觉性
+C2. 情绪高涨或精力异常增加筛查
+node_id: C.elevated_energy.lifetime
+node_type: screening
+question_goal: 评估是否曾有异常高涨、兴奋、精力旺盛或活动增加的时期
+positive_if:
+  - 明显比平时高涨、兴奋、精力过多
+  - 活动明显增加
+  - 自我感觉过度良好
+  - 因此惹麻烦或他人觉得不像平时
+  - 不是酒精或药物作用导致
+follow_up_if_yes:
+  - C.elevated_energy.current
+follow_up_if_no:
+  - C.irritable_activation.lifetime
+node_id: C.elevated_energy.current
+node_type: screening
+question_goal: 评估当前是否处于高涨、兴奋或精力异常增加状态
+positive_if:
+  - 当前明显比平时高涨、兴奋或精力过多
+C3. 易激惹伴活动增加筛查
+node_id: C.irritable_activation.lifetime
+node_type: screening
+question_goal: 评估是否曾有持续易怒、争吵、冲动或明显过度反应的时期
+positive_if:
+  - 持续数天易怒
+  - 与人争吵、冲突、过度反应
+  - 明显不同于平时
+follow_up_if_yes:
+  - C.irritable_activation.current
+follow_up_if_no:
+  - C.skip_if_no_activation
+node_id: C.irritable_activation.current
+node_type: screening
+question_goal: 评估当前是否存在持续易怒伴激活状态
+positive_if:
+  - 当前持续易怒，并伴随精力或活动增加
+C4. 躁狂 / 轻躁狂伴随症状
+以下症状必须评估是否发生在同一段高涨或易激惹时期：
+node_id: C.grandiosity
+node_type: follow_up
+question_goal: 评估自我评价异常升高或夸大信念
+positive_if:
+  - 觉得自己特别重要、特别有能力或不同寻常
+follow_up_if_yes:
+  - 要求举例
+  - 评估是否达到妄想程度
+node_id: C.decreased_need_sleep
+node_type: follow_up
+question_goal: 评估睡眠需求减少
+positive_if:
+  - 睡得明显少但仍精力充沛
+node_id: C.talkativeness
+node_type: follow_up
+question_goal: 评估话多或说话停不下来
+positive_if:
+  - 比平时明显话多
+  - 难以停止讲话
+  - 有持续说话的压力
+node_id: C.racing_thoughts
+node_type: follow_up
+question_goal: 评估思维奔逸或想法飞快
+positive_if:
+  - 想法跑得很快
+  - 很快从一个主题跳到另一个主题
+node_id: C.distractibility
+node_type: follow_up
+question_goal: 评估注意力易转移
+positive_if:
+  - 很小的干扰也会转移注意力
+node_id: C.activity_increase
+node_type: follow_up
+question_goal: 评估目标导向活动增加或精神运动性激越
+positive_if:
+  - 学习、工作、社交、性活动或其他活动明显增加
+  - 异常忙碌或停不下来
+  - 身体或心理上明显坐不住
+node_id: C.risky_pleasurable_activity
+node_type: follow_up
+question_goal: 评估高风险愉悦活动
+positive_if:
+  - 冲动消费
+  - 冒险驾驶
+  - 性冲动或性风险
+  - 其他不顾后果的冒险行为
+C5. 持续时间、住院、功能损害和基线变化
+node_id: C.duration
+node_type: duration
+question_goal: 评估高涨或易激惹状态最长持续多久
+positive_if:
+  - 持续数天
+  - 持续4天以上
+  - 持续7天以上
+node_id: C.hospitalization
+node_type: severity
+question_goal: 评估是否因此住院
+positive_if:
+  - 因这类状态住院或需要紧急处理
+node_id: C.impairment
+node_type: impairment
+question_goal: 评估是否造成明显功能问题
+positive_if:
+  - 明显影响家庭、学习、工作、社交或关系
+node_id: C.baseline_change
+node_type: follow_up
+question_goal: 评估是否与平时状态明显不同
+positive_if:
+  - 与平时明显不同
+  - 他人明显注意到改变
+node_id: C.psychotic_features
+node_type: risk
+question_goal: 评估高涨或易激惹期间是否出现精神病性体验
+positive_if:
+  - 幻觉
+  - 妄想样信念
+  - 思维或行为明显混乱
+follow_up_if_yes:
+  - K.psychotic_symptoms
+C6. 跳转逻辑
+skip_rule:
+  - 如果既往和当前均无高涨/精力增加，也无持续易激惹伴激活，则跳过多数躁狂细节
+continue_rule:
+  - 如果高涨或易激惹激活阳性，继续评估伴随症状、持续时间、功能损害、住院、基线变化和精神病性特征
+internal_summary_logic:
+  - 内部区分躁狂水平和轻躁狂水平可能性
+  - 不向来访者输出诊断
+D. 惊恐发作 / 惊恐障碍相关模块
+module_id: D
+module_name: 惊恐发作 / 惊恐障碍相关模块
+time_frame:
+  lifetime: 既往惊恐发作
+  current: 过去1个月的持续担忧或行为改变
+core_construct:
+  - 突然出现的强烈恐惧或不适
+  - 短时间内达到高峰
+  - 意外或不可预测发作
+  - 身体和认知症状
+  - 后续担忧或行为改变
+D1. 惊恐发作筛查
+node_id: D.sudden_attack
+node_type: screening
+question_goal: 评估是否曾突然出现强烈恐惧、焦虑、不适或惊恐发作
+positive_if:
+  - 突然发作
+  - 强烈恐惧或不适
+  - 不止一次
+node_id: D.rapid_peak
+node_type: screening
+question_goal: 评估发作是否在短时间内达到高峰
+positive_if:
+  - 数分钟内迅速达到高峰
+node_id: D.unexpected_attack
+node_type: screening
+question_goal: 评估是否有意外、不可预测或无明显诱因的发作
+positive_if:
+  - 至少一次意外或无明显诱因发作
+D2. 发作后的担忧或行为改变
+node_id: D.persistent_concern_or_behavior_change
+node_type: follow_up
+question_goal: 评估发作后是否持续担心再次发作、担心后果，或因此改变行为
+positive_if:
+  - 持续担心再次发作
+  - 担心发作后果
+  - 因发作回避某些场景
+  - 因发作频繁求医或改变生活方式
+D3. 惊恐症状群
+在最严重的一次发作中，评估：
+nodes:
+  - D.palpitations: 心跳加速、心悸或心脏砰砰跳
+  - D.sweating: 出汗
+  - D.trembling: 发抖或震颤
+  - D.shortness_of_breath: 呼吸困难或憋闷
+  - D.choking: 窒息感或喉咙堵塞感
+  - D.chest_discomfort: 胸痛、胸闷或胸部不适
+  - D.nausea_or_abdominal_distress: 恶心、胃部不适或腹泻
+  - D.dizziness: 头晕、站不稳、发飘或快晕倒
+  - D.chills_or_heat: 发冷或发热
+  - D.numbness_or_tingling: 麻木或刺痛
+  - D.derealization_or_depersonalization: 不真实感或与自己分离的感觉
+  - D.fear_losing_control: 害怕失控或发疯
+  - D.fear_dying: 害怕自己会死
+positive_if:
+  - 该症状出现在惊恐样发作中
+D4. 当前影响
+node_id: D.current_past_month_impact
+node_type: impairment
+time_frame: 过去1个月
+question_goal: 评估过去1个月是否仍因惊恐发作而担忧或改变行为
+positive_if:
+  - 持续担忧
+  - 担心后果
+  - 行为改变或回避
+skip_rule:
+  - 如果没有突发强烈发作，或发作没有快速达到高峰，跳过惊恐细节追问
+E. 广场恐惧相关模块
+module_id: E
+module_name: 广场恐惧相关模块
+time_frame: 当前
+core_construct:
+  - 在难以逃离或难以获得帮助的场景中恐惧或回避
+  - 需要陪伴或忍受强烈恐惧
+  - 功能损害
+E1. 场景恐惧或回避筛查
+node_id: E.situation_fear
+node_type: screening
+question_goal: 评估是否害怕或回避某些离开困难或难以获得帮助的场景
+positive_if:
+  - 害怕或回避公共交通
+  - 开阔空间
+  - 封闭空间
+  - 排队或人群
+  - 独自外出
+E2. 具体场景
+nodes:
+  - E.public_transport: 公共交通
+  - E.open_spaces: 开阔空间
+  - E.enclosed_spaces: 封闭空间
+  - E.crowds_or_lines: 人群或排队
+  - E.outside_alone: 独自外出
+question_goal: 确认哪些场景会触发恐惧或回避
+positive_if:
+  - 该场景引发明显恐惧、回避或需要陪伴
+E3. 核心担忧
+node_id: E.escape_help_concern
+node_type: follow_up
+question_goal: 评估害怕是否与逃离困难、无人帮助、失控、出丑或身体不适有关
+positive_if:
+  - 担心逃不出去
+  - 担心得不到帮助
+  - 担心出现惊恐样症状、失控、晕倒或尴尬
+E4. 回避和功能影响
+node_id: E.avoidance
+node_type: follow_up
+question_goal: 评估是否回避、需要陪伴，或忍受强烈恐惧
+positive_if:
+  - 回避相关场景
+  - 需要他人陪伴
+  - 忍受时很痛苦
+node_id: E.impairment
+node_type: impairment
+question_goal: 评估是否影响行动自由、学习、工作、人际或日常生活
+positive_if:
+  - 明显影响生活、工作、学习、社交或出行
+F. 社交焦虑相关模块
+module_id: F
+module_name: 社交焦虑相关模块
+time_frame: 当前 / 过去1个月
+core_construct:
+  - 害怕社交、表现或被注视
+  - 害怕负面评价、羞辱、拒绝或出丑
+  - 回避或强忍
+  - 功能损害
+F1. 社交恐惧筛查
+node_id: F.social_fear
+node_type: screening
+question_goal: 评估社交互动、公开表现或被人注视时是否明显害怕
+positive_if:
+  - 社交场合明显焦虑
+  - 公开表达或表演时害怕
+  - 被人注视时害怕
+F2. 负面评价担忧
+node_id: F.negative_evaluation
+node_type: follow_up
+question_goal: 评估是否担心尴尬、被羞辱、被拒绝、被批评或表现异常
+positive_if:
+  - 担心出丑
+  - 担心被评价
+  - 担心别人看出自己紧张
+F3. 回避或强忍
+node_id: F.avoidance_or_endurance
+node_type: follow_up
+question_goal: 评估是否回避社交场合，或不得不强忍强烈焦虑
+positive_if:
+  - 回避社交或表现情境
+  - 虽然参加但非常痛苦
+F4. 范围
+node_id: F.performance_only
+node_type: follow_up
+question_goal: 判断恐惧是否主要局限于公开表现
+positive_if:
+  - 主要害怕公开讲话、考试、表演或被观察
+negative_if:
+  - 广泛存在于日常社交互动
+F5. 功能损害
+node_id: F.impairment
+node_type: impairment
+question_goal: 评估是否造成痛苦或影响学习、工作、人际关系
+positive_if:
+  - 影响学习、工作、社交、亲密关系或生活选择
+G. 强迫及相关症状模块
+module_id: G
+module_name: 强迫及相关症状模块
+time_frame: 当前 / 过去1个月
+core_construct:
+  - 强迫思维
+  - 强迫行为或心理仪式
+  - 耗时、痛苦或功能损害
+  - 自知力
+  - 与其他问题的鉴别
+G1. 强迫思维筛查
+node_id: G.intrusive_thoughts
+node_type: screening
+question_goal: 评估是否有反复出现、不想要、难以摆脱的想法、画面或冲动
+positive_if:
+  - 反复侵入性想法、画面或冲动
+  - 不想要但控制不住
+  - 引起焦虑或痛苦
+  - 不只是普通担忧
+follow_up_if_yes:
+  - G.resistance_or_recurrence
+follow_up_if_no:
+  - G.compulsion_screen
+node_id: G.resistance_or_recurrence
+node_type: follow_up
+question_goal: 评估是否试图压制、忽略或中和这些想法，但它们仍反复出现
+positive_if:
+  - 试图摆脱但反复出现
+  - 需要做某些事来缓解不安
+G2. 强迫行为筛查
+node_id: G.repetitive_behaviors
+node_type: screening
+question_goal: 评估是否有重复行为或心理仪式
+positive_if:
+  - 反复清洗
+  - 反复检查
+  - 计数
+  - 排列
+  - 重复确认
+  - 反复祈祷或默念
+  - 其他仪式化行为
+node_id: G.compulsion_function
+node_type: follow_up
+question_goal: 评估这些行为是否用于缓解焦虑或防止某种担心的事情发生
+positive_if:
+  - 行为用于降低焦虑
+  - 行为用于避免灾难或坏结果
+  - 来访者觉得过度但难以停止
+G3. 耗时、痛苦和功能损害
+node_id: G.time_distress_impairment
+node_type: impairment
+question_goal: 评估强迫思维或行为是否耗时、痛苦或影响功能
+positive_if:
+  - 每天耗时明显
+  - 引起显著痛苦
+  - 干扰学习、工作、家庭、社交或关系
+G4. 自知力和鉴别
+node_id: G.insight
+node_type: follow_up
+question_goal: 评估来访者对强迫内容是否认为过度、不合理或难以确定
+values:
+  - 自知力较好
+  - 自知力较差
+  - 接近妄想性确信
+  - 不确定
+node_id: G.exclusion
+node_type: exclusion
+question_goal: 评估症状是否更适合由囤积、躯体变形担忧、进食问题、物质使用、抽动或其他精神问题解释
+H. 创伤及应激相关模块
+module_id: H
+module_name: 创伤及应激相关模块
+time_frame:
+  current: 过去1个月
+  lifetime: 终生创伤暴露
+core_construct:
+  - 创伤暴露
+  - 闯入症状
+  - 回避
+  - 负性认知和情绪改变
+  - 警觉性增高
+  - 持续时间
+  - 功能损害
+H1. 创伤暴露
+node_id: H.trauma_exposure
+node_type: screening
+question_goal: 评估是否经历、目睹或被告知过严重威胁生命、安全、身体完整性或性侵犯的事件
+positive_if:
+  - 直接经历严重威胁或暴力
+  - 目睹他人遭遇
+  - 得知亲近的人遭遇
+  - 反复接触创伤细节
+follow_up_if_no:
+  - 跳过详细创伤症状节点
+H2. 闯入症状
+nodes:
+  - H.intrusive_memories: 反复侵入性回忆
+  - H.nightmares: 噩梦
+  - H.flashbacks: 像重新经历一样的闪回
+  - H.distress_to_reminders: 接触提醒物时强烈痛苦
+  - H.physiological_reactivity: 接触提醒物时明显身体反应
+question_goal: 评估创伤相关再体验
+positive_if:
+  - 创伤记忆、梦境、闪回或提醒物反应反复出现
+H3. 回避
+nodes:
+  - H.avoid_internal_reminders: 回避相关想法、感受、记忆
+  - H.avoid_external_reminders: 回避地点、人物、谈话、活动或物品
+question_goal: 评估是否回避创伤相关线索
+positive_if:
+  - 主动回避内部或外部提醒
+H4. 负性认知和情绪
+nodes:
+  - H.memory_gap: 对创伤事件部分记忆缺失
+  - H.negative_beliefs: 对自己、他人或世界持续负面信念
+  - H.self_or_other_blame: 过度责备自己或他人
+  - H.negative_emotional_state: 持续恐惧、羞耻、愤怒、内疚
+  - H.loss_of_interest: 兴趣下降
+  - H.detachment: 疏离感
+  - H.emotional_numbing: 情感麻木或难以体验积极情绪
+question_goal: 评估创伤后的持续负性改变
+H5. 警觉性和反应性增高
+nodes:
+  - H.irritability_or_anger: 易怒或愤怒爆发
+  - H.reckless_or_self_destructive_behavior: 冒险或自毁行为
+  - H.hypervigilance: 过度警觉
+  - H.exaggerated_startle: 过度惊跳
+  - H.concentration_problems: 注意力问题
+  - H.sleep_disturbance: 睡眠问题
+question_goal: 评估创伤后的警觉性和反应性变化
+H6. 持续时间和功能损害
+node_id: H.duration
+node_type: duration
+question_goal: 评估创伤相关症状持续多久
+positive_if:
+  - 持续超过1个月
+  - 若不足1个月，内部标记为急性应激方向
+node_id: H.impairment
+node_type: impairment
+question_goal: 评估创伤相关症状是否造成痛苦或功能损害
+positive_if:
+  - 明显痛苦
+  - 影响学习、工作、家庭、人际或日常生活
+I. 酒精使用相关模块
+module_id: I
+module_name: 酒精使用相关模块
+time_frame: 过去12个月
+core_construct:
+  - 饮酒
+  - 失控
+  - 渴求
+  - 角色功能受损
+  - 危险使用
+  - 明知有害仍继续
+  - 耐受或戒断
+I1. 饮酒筛查
+node_id: I.alcohol_use
+node_type: screening
+question_goal: 评估过去12个月是否有饮酒及相关问题
+positive_if:
+  - 饮酒不只是极少量或偶发
+follow_up_if_yes:
+  - I.criteria_nodes
+follow_up_if_no:
+  - skip alcohol module
+I2. 酒精相关问题节点
+nodes:
+  - I.larger_amount_or_longer_than_intended: 饮酒量或时间超过原本打算
+  - I.unsuccessful_cut_down: 想减少或停止但失败
+  - I.time_spent: 花大量时间获得、饮用或从酒精影响中恢复
+  - I.craving: 强烈想喝酒
+  - I.role_failure: 因饮酒影响工作、学习或家庭责任
+  - I.social_interpersonal_problems: 因饮酒导致人际问题仍继续
+  - I.activities_reduced: 因饮酒减少重要活动
+  - I.hazardous_use: 在危险情况下饮酒
+  - I.continued_use_despite_harm: 明知造成身体或心理问题仍继续
+  - I.tolerance: 需要更多酒量才有效果
+  - I.withdrawal: 停止或减少后出现戒断样不适
+question_goal: 评估过去12个月酒精相关控制、损害、危险和生理适应问题
+J. 非酒精物质使用相关模块
+module_id: J
+module_name: 非酒精物质使用相关模块
+time_frame: 过去12个月
+core_construct:
+  - 非酒精物质或药物滥用
+  - 失控
+  - 渴求
+  - 功能损害
+  - 危险使用
+  - 耐受或戒断
+J1. 物质使用筛查
+node_id: J.substance_use
+node_type: screening
+question_goal: 评估过去12个月是否使用非酒精物质或非医疗目的使用药物
+examples:
+  - 兴奋剂
+  - 阿片类
+  - 大麻
+  - 镇静催眠药
+  - 致幻剂
+  - 吸入剂
+  - 处方药或非处方药滥用
+positive_if:
+  - 非医疗目的使用
+  - 为了兴奋、镇静、改变情绪或获得快感而使用
+follow_up_if_yes:
+  - J.substance_class
+follow_up_if_no:
+  - skip substance module
+J2. 物质类别和主要问题物质
+node_id: J.substance_class
+node_type: follow_up
+question_goal: 确认使用过哪些物质，以及哪一种造成最大问题
+positive_if:
+  - 明确一种或多种物质类别
+J3. 物质使用相关问题节点
+nodes:
+  - J.larger_amount_or_longer_than_intended: 使用量或时间超过原本打算
+  - J.unsuccessful_cut_down: 想减少或停止但失败
+  - J.time_spent: 花大量时间获得、使用或恢复
+  - J.craving: 强烈渴求
+  - J.role_failure: 影响工作、学习或家庭责任
+  - J.social_interpersonal_problems: 导致人际问题仍继续
+  - J.activities_reduced: 减少重要活动
+  - J.hazardous_use: 危险情况下使用
+  - J.continued_use_despite_harm: 明知有害仍继续
+  - J.tolerance: 耐受
+  - J.withdrawal: 戒断
+question_goal: 评估过去12个月非酒精物质相关控制、损害、危险和生理适应问题
+K. 精神病性症状模块
+module_id: K
+module_name: 精神病性症状模块
+time_frame:
+  current: 当前
+  lifetime: 终生
+core_construct:
+  - 幻觉样体验
+  - 妄想样信念
+  - 思维或言语混乱
+  - 行为明显异常
+  - 与情绪发作、物质、躯体疾病的关系
+  - 安全风险
+K0. 进入条件
+进入本模块的情况：
+来访者报告听到、看到或感觉到别人没有的东西；
+来访者报告被害、被监视、被控制、特殊使命等信念；
+来访者言语或思维明显混乱；
+出现命令性幻听或相关安全风险；
+严重情绪发作伴不合现实信念。
+K1. 幻觉样体验
+node_id: K.auditory_hallucination
+node_type: screening
+question_goal: 评估是否听到别人听不到的声音
+positive_if:
+  - 听到声音、评论、命令或对话
+  - 他人听不到
+risk_override:
+  - 命令其自伤或伤人 -> 危机流程
+node_id: K.visual_or_other_hallucination
+node_type: screening
+question_goal: 评估是否看到、感觉到、闻到或感知到别人没有的东西
+positive_if:
+  - 幻视、幻触、幻嗅或其他异常感知
+K2. 妄想样信念
+nodes:
+  - K.persecutory_beliefs: 被害、被监视、被跟踪
+  - K.reference_beliefs: 觉得外界信息在特别指向自己
+  - K.control_beliefs: 被控制、被操纵
+  - K.thought_insertion_withdrawal_broadcasting: 思想被插入、抽走或广播
+  - K.grandiose_or_special_mission_beliefs: 特殊身份、特殊使命、特殊能力
+  - K.somatic_or_nihilistic_beliefs: 躯体或虚无相关不寻常信念
+question_goal: 评估固定异常信念和现实检验能力
+positive_if:
+  - 信念强烈固定
+  - 与文化背景不一致
+  - 很难被证据动摇
+K3. 思维、言语和行为混乱
+node_id: K.disorganized_speech_or_thought
+node_type: screening
+question_goal: 评估思维或言语是否明显混乱
+positive_if:
+  - 说话难以理解
+  - 主题跳跃严重
+  - 联想松散
+  - 明显思维混乱
+node_id: K.disorganized_or_catatonic_behavior
+node_type: screening
+question_goal: 评估行为是否明显异常、混乱或近似紧张症样表现
+positive_if:
+  - 明显怪异或混乱行为
+  - 极端静止或激越
+  - 与情境不符
+K4. 时间关系和鉴别
+node_id: K.mood_episode_timing
+node_type: follow_up
+question_goal: 判断精神病性体验是否只在抑郁、躁狂或轻躁狂发作期间出现，还是也独立出现
+node_id: K.substance_or_medical_context
+node_type: exclusion
+question_goal: 评估这些体验是否可能由物质、药物、睡眠剥夺或躯体疾病解释
+node_id: K.safety
+node_type: risk
+question_goal: 评估精神病性体验是否带来自伤、伤人或严重失控风险
+risk_override:
+  - 命令性幻觉、被害信念伴防御性攻击计划、无法保持安全 -> 危机流程
+L. 神经性厌食样限制性进食模块
+module_id: L
+module_name: 限制性进食 / 神经性厌食样模块
+time_frame: 当前 / 过去3个月
+core_construct:
+  - 限制进食
+  - 明显低体重或体重下降
+  - 害怕变胖
+  - 体重体型认知异常
+  - 身体或功能风险
+L1. 限制进食或低体重筛查
+node_id: L.restriction_or_low_weight
+node_type: screening
+question_goal: 评估是否明显限制进食、体重过低或持续追求减重
+positive_if:
+  - 持续限制进食
+  - 体重明显偏低或快速下降
+  - 强烈想减重
+L2. 害怕体重增加
+node_id: L.fear_weight_gain
+node_type: follow_up
+question_goal: 评估是否强烈害怕变胖或体重增加
+positive_if:
+  - 强烈害怕变胖
+  - 即使体重低也持续避免体重增加
+L3. 体重体型和自我评价
+node_id: L.body_image_disturbance
+node_type: follow_up
+question_goal: 评估体重体型是否过度影响自我评价，或是否低估健康风险
+positive_if:
+  - 体重体型强烈影响自我价值
+  - 对低体重或健康风险认识不足
+L4. 暴食或清除行为
+node_id: L.binge_purge_subtype
+node_type: follow_up
+question_goal: 评估限制性进食背景下是否有暴食、催吐、泻药、利尿剂或过度运动
+positive_if:
+  - 暴食
+  - 催吐
+  - 泻药或利尿剂使用
+  - 过度运动
+L5. 身体和功能风险
+node_id: L.medical_functional_risk
+node_type: risk
+question_goal: 评估身体后果和功能损害
+positive_if:
+  - 晕厥、虚弱、心悸、月经紊乱、医学不稳定或明显功能损害
+risk_override:
+  - 严重医学风险 -> 建议紧急医学评估
+M. 神经性贪食样模块
+module_id: M
+module_name: 暴食 / 补偿行为模块
+time_frame: 过去3个月
+core_construct:
+  - 暴食
+  - 失控感
+  - 补偿行为
+  - 频率
+  - 体重体型过度影响自我评价
+M1. 暴食筛查
+node_id: M.binge_large_amount
+node_type: screening
+question_goal: 评估是否在短时间内进食非常大量食物
+positive_if:
+  - 在有限时间内进食明显大量食物
+node_id: M.loss_of_control
+node_type: screening
+question_goal: 评估暴食时是否有失控感
+positive_if:
+  - 感到停不下来
+  - 无法控制进食
+node_id: M.frequency
+node_type: frequency_duration
+question_goal: 评估过去3个月暴食频率
+positive_if:
+  - 大约每周一次或更多
+M2. 补偿行为
+node_id: M.compensatory_behavior
+node_type: screening
+question_goal: 评估是否为了防止体重增加而采取补偿行为
+positive_if:
+  - 催吐
+  - 禁食
+  - 过度运动
+  - 泻药、利尿剂、灌肠剂或其他药物滥用
+node_id: M.compensation_frequency
+node_type: frequency_duration
+question_goal: 评估补偿行为频率
+positive_if:
+  - 大约每周一次或更多
+M3. 体重体型与自我评价
+node_id: M.body_shape_weight_self_evaluation
+node_type: follow_up
+question_goal: 评估体重或体型是否强烈影响自我感受
+positive_if:
+  - 体重体型明显决定自尊或自我评价
+M4. 与限制性进食的关系
+node_id: M.relation_to_low_weight_or_restriction
+node_type: exclusion
+question_goal: 判断暴食/补偿是否只发生在明显低体重或严重限制进食状态下
+MB. 暴食障碍样模块
+module_id: MB
+module_name: 暴食障碍样模块
+time_frame: 过去3个月
+core_construct:
+  - 暴食
+  - 失控感
+  - 无规律补偿行为
+  - 暴食相关特征
+  - 痛苦
+  - 频率
+MB1. 暴食和失控感
+node_id: MB.binge_large_amount
+node_type: screening
+question_goal: 评估是否在短时间内进食大量食物
+positive_if:
+  - 有明显大量进食
+node_id: MB.loss_of_control
+node_type: screening
+question_goal: 评估暴食时是否失控
+positive_if:
+  - 无法停止
+  - 无法控制吃多少
+MB2. 暴食伴随特征
+nodes:
+  - MB.eating_rapidly: 吃得很快
+  - MB.eating_until_uncomfortably_full: 吃到不舒服
+  - MB.eating_when_not_hungry: 不饿也吃很多
+  - MB.eating_alone_due_to_embarrassment: 因羞耻独自进食
+  - MB.disgust_depression_guilt_afterward: 之后厌恶自己、内疚或低落
+question_goal: 评估暴食相关特征
+MB3. 痛苦、频率和补偿行为
+node_id: MB.marked_distress
+node_type: impairment
+question_goal: 评估是否对暴食明显痛苦、羞耻或内疚
+positive_if:
+  - 对暴食明显痛苦
+  - 影响情绪或生活
+node_id: MB.frequency
+node_type: frequency_duration
+question_goal: 评估过去3个月暴食频率
+positive_if:
+  - 大约每周一次或更多
+node_id: MB.no_regular_compensation
+node_type: exclusion
+question_goal: 评估是否没有规律性的催吐、禁食、泻药、利尿剂或过度运动等补偿行为
+positive_if:
+  - 无规律性补偿行为
+N. 广泛性焦虑相关模块
+module_id: N
+module_name: 广泛性焦虑相关模块
+time_frame: 过去6个月
+core_construct:
+  - 对多个领域过度担心
+  - 难以控制担忧
+  - 焦虑相关身体或认知症状
+  - 功能损害
+N1. 过度担忧筛查
+node_id: N.excessive_worry
+node_type: screening
+question_goal: 评估是否长期对多个事情过度担心
+positive_if:
+  - 对多个领域担心
+  - 担心明显过度
+  - 多数日子存在
+  - 持续约6个月
+node_id: N.difficulty_controlling_worry
+node_type: screening
+question_goal: 评估担忧是否难以控制
+positive_if:
+  - 很难停止担心
+  - 担忧像停不下来
+N2. 伴随症状
+nodes:
+  - N.restlessness: 坐立不安或紧张
+  - N.fatigue: 容易疲劳
+  - N.concentration_difficulty: 注意力困难或脑子空白
+  - N.irritability: 易怒
+  - N.muscle_tension: 肌肉紧张
+  - N.sleep_disturbance: 睡眠问题
+question_goal: 评估长期担忧伴随的身体和认知症状
+N3. 功能损害和鉴别
+node_id: N.impairment
+node_type: impairment
+question_goal: 评估担忧是否造成痛苦或功能损害
+positive_if:
+  - 影响学习、工作、家庭、人际或日常生活
+node_id: N.exclusion
+node_type: exclusion
+question_goal: 判断担忧是否更适合由惊恐、社交焦虑、强迫、创伤、物质、躯体疾病或情绪发作解释
+O. 躯体 / 器质性 / 药物或物质原因排除模块
+module_id: O
+module_name: 躯体、器质性、药物或物质原因排除模块
+time_frame: 当前及相关病史
+core_construct:
+  - 躯体疾病
+  - 药物影响
+  - 酒精或其他物质中毒 / 戒断
+  - 睡眠剥夺
+  - 神经、内分泌或其他器质性因素
+O1. 躯体疾病
+node_id: O.medical_condition
+node_type: exclusion
+question_goal: 评估是否存在可能解释当前精神症状的身体疾病
+positive_if:
+  - 内分泌、神经系统、感染、代谢、慢性疼痛或其他医学问题可能相关
+O2. 药物、酒精或其他物质
+node_id: O.medication_effect
+node_type: exclusion
+question_goal: 评估当前或近期药物是否可能影响情绪、睡眠、食欲、焦虑、感知或认知
+positive_if:
+  - 当前或近期药物可能相关
+node_id: O.substance_effect
+node_type: exclusion
+question_goal: 评估症状是否主要发生在酒精/物质使用、中毒、戒断或改变用量之后
+positive_if:
+  - 症状与物质使用或停用时间关系密切
+O3. 睡眠和身体状态
+node_id: O.sleep_deprivation
+node_type: exclusion
+question_goal: 评估严重睡眠不足或昼夜节律紊乱是否可能解释症状
+positive_if:
+  - 症状出现在严重睡眠不足或作息紊乱后
+O4. 内部排除总结
+node_id: O.rule_out_summary
+node_type: summary
+question_goal: 内部标记是否已基本排除医学、器质性、药物或物质原因
+values:
+  - ruled_out: 基本排除
+  - not_ruled_out: 尚不能排除
+  - uncertain: 信息不足
+P. 反社会人格相关模块
+module_id: P
+module_name: 反社会人格相关模块
+time_frame: 终生
+core_construct:
+  - 15岁前品行问题
+  - 成年后持续侵犯他人权利或违反规则
+  - 欺骗、冲动、攻击、漠视安全、不负责任、缺乏悔意
+P0. 进入条件
+本模块通常不是一般心理筛查的重点。
+仅在以下情况进入：
+存在明显违法、暴力、攻击或伤人风险；
+研究协议要求完整覆盖 MINI-like 模块；
+来访者主动提到长期侵犯他人权利、欺骗、攻击或严重不负责任行为。
+P1. 15岁前品行问题
+nodes:
+  - P.before15_truancy_or_running_away: 逃学、离家或严重违纪
+  - P.before15_lying_stealing_breaking_in: 反复说谎、偷窃、闯入
+  - P.before15_fights_bullying_threats: 打架、欺凌、威胁
+  - P.before15_property_destruction_or_fire_setting: 破坏财物或纵火
+  - P.before15_cruelty_to_people_or_animals: 残忍对待人或动物
+  - P.before15_forced_sexual_activity: 强迫性行为
+question_goal: 评估15岁前是否有反复或严重品行问题
+positive_if:
+  - 15岁前存在反复、严重、具有侵犯性的行为模式
+P2. 成年后反社会行为模式
+nodes:
+  - P.illegal_acts: 反复违法或被捕相关行为
+  - P.deceitfulness: 欺骗、骗取利益或取乐
+  - P.impulsivity: 冲动且缺乏计划
+  - P.repeated_fights_or_assaults: 反复打架或攻击他人
+  - P.reckless_disregard_for_safety: 漠视自己或他人安全
+  - P.consistent_irresponsibility: 长期不负责任
+  - P.lack_of_remorse: 伤害、欺骗、偷窃或侵犯后缺乏内疚
+question_goal: 评估成年后是否存在稳定的反社会行为模式
+positive_if:
+  - 多个领域反复出现侵犯他人权利、违反规则或缺乏责任的行为
+2. 面向九类心理健康系统的研究扩展模块
+Q. ADHD / 注意力相关扩展模块
+module_id: Q
+module_name: ADHD / 注意力相关问题扩展模块
+time_frame:
+  developmental: 儿童期或青少年期至今
+  current: 当前功能影响
+core_construct:
+  - 注意力不集中
+  - 组织困难
+  - 遗忘和拖延
+  - 易分心
+  - 多动或冲动
+  - 早期起病
+  - 跨场景影响
+  - 与焦虑、抑郁、睡眠、创伤、物质等鉴别
+Q1. 注意力不集中
+node_id: Q.inattention
+node_type: screening
+question_goal: 评估是否长期存在注意力维持困难、易分心、粗心或任务完成困难
+positive_if:
+  - 长期注意力不集中
+  - 学习、工作或日常管理受影响
+Q2. 组织困难和遗忘
+node_id: Q.disorganization_forgetfulness
+node_type: follow_up
+question_goal: 评估组织能力差、丢三落四、忘事、拖延或计划困难
+positive_if:
+  - 反复出现并造成功能影响
+Q3. 多动和冲动
+node_id: Q.hyperactivity_impulsivity
+node_type: follow_up
+question_goal: 评估坐立不安、活动过多、打断他人、等待困难或冲动决策
+positive_if:
+  - 长期多动或冲动表现
+Q4. 发展性和跨场景
+node_id: Q.childhood_onset
+node_type: duration
+question_goal: 评估症状是否从儿童期或青少年期开始
+positive_if:
+  - 成年前已经存在或长期持续
+node_id: Q.cross_situational
+node_type: impairment
+question_goal: 评估症状是否出现在多个场景
+positive_if:
+  - 学习、工作、家庭、社交或生活管理多个场景受影响
+Q5. 鉴别
+node_id: Q.differential
+node_type: exclusion
+question_goal: 评估注意力问题是否更可能由抑郁、焦虑、睡眠不足、创伤、物质使用或当前压力解释
+R. 睡眠-觉醒问题扩展模块
+module_id: R
+module_name: 睡眠-觉醒问题扩展模块
+time_frame: 当前
+core_construct:
+  - 失眠
+  - 嗜睡
+  - 昼夜节律紊乱
+  - 睡眠质量差
+  - 白天功能损害
+  - 与其他心理或躯体因素鉴别
+R1. 睡眠问题筛查
+node_id: R.sleep_problem
+node_type: screening
+question_goal: 评估当前是否存在睡眠问题
+positive_if:
+  - 入睡困难
+  - 睡眠维持困难
+  - 早醒
+  - 睡得过多
+  - 白天嗜睡
+  - 昼夜节律明显紊乱
+R2. 持续时间和频率
+node_id: R.duration_frequency
+node_type: frequency_duration
+question_goal: 评估睡眠问题持续多久、每周出现几次
+positive_if:
+  - 持续或反复出现
+R3. 白天功能影响
+node_id: R.daytime_impairment
+node_type: impairment
+question_goal: 评估睡眠问题对白天功能的影响
+positive_if:
+  - 疲惫
+  - 注意力下降
+  - 情绪受影响
+  - 学习或工作受影响
+  - 驾驶、操作或工作安全受影响
+R4. 鉴别
+node_id: R.differential
+node_type: exclusion
+question_goal: 评估睡眠问题是否更可能由抑郁、焦虑、创伤、躁狂、物质使用、药物、躯体疾病或作息安排解释
+3. 全局安全流程
+S1. 自杀 / 自伤危机流程
+node_id: GLOBAL.suicide_crisis
+trigger_if:
+  - 当前自杀意图
+  - 具体计划
+  - 可获得工具或手段
+  - 近期时间安排
+  - 准备行为
+  - 无法保证安全
+  - 正在实施或即将实施自伤/自杀
+action:
+  - 停止普通筛查
+  - 表达明确关切
+  - 鼓励立即联系当地紧急服务、危机热线、医院急诊或身边可信任的人
+  - 鼓励远离工具、药物和危险地点
+  - 只询问一个当前安全问题
+S2. 伤人危机流程
+node_id: GLOBAL.harm_to_others_crisis
+trigger_if:
+  - 明确伤害他人的意图
+  - 有目标、计划、工具或近期时间
+action:
+  - 停止普通筛查
+  - 鼓励立即联系紧急服务或专业人员
+  - 鼓励与目标人物、工具或危险环境保持距离
+  - 不强化暴力信念
+S3. 精神病性危险流程
+node_id: GLOBAL.psychosis_danger
+trigger_if:
+  - 命令性幻听要求自伤或伤人
+  - 被害信念导致防御性攻击计划
+  - 现实检验受损并伴随危险行为
+action:
+  - 停止普通筛查
+  - 优先联系现实中的人类支持
+  - 建议紧急精神科或急诊评估
+S4. 严重医学风险流程
+node_id: GLOBAL.medical_risk
+trigger_if:
+  - 严重限制进食或快速体重下降并伴随晕厥、心悸、意识混乱
+  - 药物过量
+  - 严重戒断风险
+  - 意识状态改变
+  - 严重睡眠剥夺伴精神病性体验
+action:
+  - 建议紧急医学评估
+  - 如果医学风险迫在眉睫，不继续普通筛查
+4. 推荐默认模块顺序
+default_order:
+  - GLOBAL.chief_complaint
+  - A.depression
+  - B.suicidality
+  - C.manic_hypomanic
+  - D.panic
+  - E.agoraphobia
+  - F.social_anxiety
+  - G.ocd
+  - H.ptsd
+  - N.generalized_anxiety
+  - K.psychotic_symptoms
+  - L.anorexia_like
+  - M.bulimia_like
+  - MB.binge_eating_like
+  - I.alcohol
+  - J.substance
+  - O.medical_organic_drug_rule_out
+  - P.antisocial_optional
+  - Q.adhd_extension_optional
+  - R.sleep_wake_extension_optional
+  - GLOBAL.end_check
+5. 导航启发规则
+if_user_reports_suicidal_intent_or_plan:
+  next_node: B.CRISIS_PROTOCOL
+
+if_user_reports_passive_death_wish:
+  next_node: B.active_self_harm_or_suicide_thought
+
+if_user_reports_low_mood_or_anhedonia:
+  next_node: A.low_mood.current_2w or A.anhedonia.current_2w
+
+if_user_reports_depression:
+  also_check:
+    - B.suicidality
+    - C.manic_hypomanic
+    - O.rule_out
+
+if_user_reports_high_energy_decreased_sleep_impulsivity:
+  next_node: C.elevated_energy.lifetime
+
+if_user_reports_sudden_panic:
+  next_node: D.sudden_attack
+
+if_user_reports_avoidance_of_places:
+  next_node: E.situation_fear
+
+if_user_reports_fear_of_judgment:
+  next_node: F.social_fear
+
+if_user_reports_intrusive_thoughts_or_rituals:
+  next_node: G.intrusive_thoughts or G.repetitive_behaviors
+
+if_user_reports_trauma:
+  next_node: H.trauma_exposure
+
+if_user_reports_hallucination_or_delusion_like_experience:
+  next_node: K.auditory_hallucination or K.persecutory_beliefs
+
+if_user_reports_eating_or_body_weight_concern:
+  next_node: L.restriction_or_low_weight or M.binge_large_amount
+
+if_user_reports_chronic_worry:
+  next_node: N.excessive_worry
+
+if_user_reports_alcohol_or_drug_problem:
+  next_node: I.alcohol_use or J.substance_use
+
+if_user_reports_attention_problem:
+  next_node: Q.inattention
+
+if_user_reports_sleep_problem:
+  next_node: R.sleep_problem
+
+before_end:
+  must_check:
+    - 安全风险
+    - 功能损害
+    - 持续时间
+    - 相关鉴别方向
+    - 躯体/药物/物质原因
+6. 结束节点
+node_id: GLOBAL.end_check
+decision: END only if:
+  - 主诉明确
+  - 与主诉相关的核心模块已探索
+  - 当前症状的起病时间和持续时间已知
+  - 严重程度已大致评估
+  - 功能损害已评估
+  - 自伤、自杀、伤人风险已评估
+  - 如相关，精神病性和躁狂/轻躁狂红旗已检查
+  - 已至少简短评估躯体疾病、药物、酒精或其他物质原因
+  - 没有未处理的迫在眉睫风险
+output:
+  - "[INTERVIEW_COMPLETE]"
