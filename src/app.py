@@ -7,6 +7,7 @@ from pathlib import Path
 
 from agent.dsm_interviewer import DSM_INTERVIEWER_SYSTEM_PROMPT
 from agent.general_interviewer import GENERAL_INTERVIEWER_SYSTEM_PROMPT
+from agent.magi_interview import run_magi_interview
 from agent.mini_interviewer import MINI_INTERVIEWER_SYSTEM_PROMPT
 from agent.termination_intent_judge import (
     build_termination_judge_prompt,
@@ -39,10 +40,18 @@ class InterviewHandler(SimpleHTTPRequestHandler):
             if length <= 0 or length > 200_000:
                 raise ValueError("请求大小不正确")
             payload = json.loads(self.rfile.read(length))
-            interviewer_prompt = self._get_interviewer_prompt(
-                payload.get("interviewer")
-            )
+            interviewer = payload.get("interviewer")
             history = self._validate_messages(payload.get("messages"))
+            if interviewer == "magi":
+                result = run_magi_interview(
+                    history,
+                    payload.get("magi_state"),
+                    MODEL,
+                )
+                self._json_response(200, result)
+                return
+
+            interviewer_prompt = self._get_interviewer_prompt(interviewer)
             response = get_llm_content(
                 [
                     {"role": "system", "content": interviewer_prompt},

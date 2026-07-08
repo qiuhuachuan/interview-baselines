@@ -19,7 +19,7 @@ h1 { margin:0 0 4px; font-size:16px; letter-spacing:.04em; }
 .eyebrow { margin:0 0 10px; color:var(--accent); font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
 .picker h2 { margin:0; font-size:clamp(24px,4vw,34px); letter-spacing:-.03em; }
 .picker-intro { margin:12px 0 26px; color:var(--muted); font-size:14px; }
-.agent-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.agent-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
 .agent-card { min-height:230px; padding:20px; border:1px solid var(--line); border-radius:18px; background:linear-gradient(145deg,#191919,#101010); color:var(--text); text-align:left; cursor:pointer; transition:transform .2s,border-color .2s,background .2s; }
 .agent-card:hover,.agent-card:focus-visible { transform:translateY(-3px); border-color:#607a29; background:linear-gradient(145deg,#1c2114,#111); outline:none; }
 .agent-icon { width:42px; height:42px; display:grid; place-items:center; margin-bottom:22px; border-radius:13px; background:#252525; color:var(--accent); font-weight:800; }

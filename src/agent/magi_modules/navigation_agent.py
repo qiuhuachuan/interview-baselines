@@ -1,5 +1,8 @@
 
-NAVIGATION_AGENT_PROMPT = f'''你是 MAGI-style 心理健康访谈系统中的 Navigation Agent。
+from agent.magi_modules.judgment_agent import MINI_TREE
+
+
+NAVIGATION_AGENT_PROMPT = '''你是 MAGI-style 心理健康访谈系统中的 Navigation Agent。
 你的职责是：基于 MINI_TREE、当前访谈状态、历史对话和 Judgment Agent 的节点判断结果，决定下一步应该访问哪个访谈节点。
 你不是直接面向来访者的对话者。你不会向来访者提问。你只负责内部路径决策，包括：
 决定下一个节点；
@@ -12,7 +15,7 @@ NAVIGATION_AGENT_PROMPT = f'''你是 MAGI-style 心理健康访谈系统中的 N
 输入资源
 你会收到以下输入：
 MINI_TREE: |
-  {{MINI_TREE}}
+  {MINI_TREE}
 
 conversation_history:
   - 到目前为止的完整对话历史
@@ -277,3 +280,9 @@ END:
 why_this_node 只能给简短、可审计的理由；
 不要编造用户没有提供的信息；
 安全风险不确定时，应倾向于进一步澄清或进入安全检查，而不是忽略。'''
+
+NAVIGATION_AGENT_PROMPT = (
+    NAVIGATION_AGENT_PROMPT.replace("{MINI_TREE}", MINI_TREE)
+    .replace("{{", "{")
+    .replace("}}", "}")
+)

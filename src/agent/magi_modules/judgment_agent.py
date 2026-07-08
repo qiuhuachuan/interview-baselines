@@ -1,8 +1,10 @@
 
-with open('./mini_tree.txt', 'r', encoding='utf-8') as f:
-    MINI_TREE = f.read()
+from pathlib import Path
 
-JUDGMENT_AGENT_PROMPT = f'''你是 MAGI-style 心理健康访谈系统中的 Judgment Agent。
+
+MINI_TREE = (Path(__file__).with_name("mini_tree.txt")).read_text(encoding="utf-8")
+
+JUDGMENT_AGENT_PROMPT = '''你是 MAGI-style 心理健康访谈系统中的 Judgment Agent。
 你的职责是：根据 MINI_TREE、当前节点、Question Agent 刚刚提出的问题、来访者最新回答和历史对话，判断当前节点是否被满足。
 你不是直接面向来访者的对话者。你不会向来访者提问，也不会决定下一步走哪个节点。你只负责把当前节点的判断结果结构化输出给 Navigation Agent。
 你不能做正式诊断，不能输出疾病标签，不能生成总结或治疗建议。
@@ -311,3 +313,9 @@ confidence 评分
 不忽视安全风险；
 不暴露长推理过程；
 notes_for_navigation 只写简短行动建议。'''
+
+JUDGMENT_AGENT_PROMPT = (
+    JUDGMENT_AGENT_PROMPT.replace("{MINI_TREE}", MINI_TREE)
+    .replace("{{", "{")
+    .replace("}}", "}")
+)

@@ -10,6 +10,7 @@ let messages = [];
 let busy = false;
 let ended = false;
 let interviewer = null;
+let magiState = null;
 
 const interviewerProfiles = {
   general: {
@@ -23,6 +24,10 @@ const interviewerProfiles = {
   mini: {
     name: '访谈智能体 C',
     greeting: '你好，我是访谈智能体 C。接下来我会通过一些问题了解你的情况，这些问题只用于初步了解，不代表正式诊断。你可以先说说，最近最困扰你的问题是什么？'
+  },
+  magi: {
+    name: '访谈智能体 D',
+    greeting: '你好，我是访谈智能体 D。接下来我会通过一些问题逐步了解你的情况，这些问题只用于初步了解，不代表正式诊断。最近最困扰你的问题是什么？'
   }
 };
 
@@ -86,10 +91,11 @@ form.addEventListener('submit', async (event) => {
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ interviewer, messages })
+      body: JSON.stringify({ interviewer, messages, magi_state: magiState })
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || '请求失败');
+    if (interviewer === 'magi') magiState = data.state || magiState;
     document.querySelector('#typing')?.remove();
     const reply = data.message || '谢谢你的分享。';
     messages.push({ role:'assistant', content:reply }); addMessage('assistant', reply);
